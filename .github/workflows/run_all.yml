@@ -1,0 +1,46 @@
+name: run all
+
+on:
+  schedule:
+    - cron: 16 8 * SEP-DEC,JAN *
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      
+      - name: install packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: execute
+        run: python workflow.py all ${{ secrets.SUPABASE_URL }} ${{ secrets.SUPABASE_KEY }}
+
+      - name: Verify changes
+        id: verify_diff
+        run: |
+          git diff --quiet . || echo "changed=true" >> $GITHUB_OUTPUT
+      
+      - name: commit files
+        if: steps.verify_diff.outputs.changed == 'true'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Action"
+          git add .
+          git commit -am "automatic update"
+
+      - name: push changes
+        if: steps.verify_diff.outputs.changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
