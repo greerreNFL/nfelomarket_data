@@ -2,6 +2,9 @@ name: run all testing
 
 on: workflow_dispatch
 
+permissions:
+  contents: write
+
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}

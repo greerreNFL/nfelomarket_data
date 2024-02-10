@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '55 8,13 * 9-12,1-2 *'
 
+permissions:
+  contents: write
+
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
