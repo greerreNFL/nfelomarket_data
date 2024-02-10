@@ -1,8 +1,6 @@
 name: run all
 
-on:
-  schedule:
-    - cron: '55 8,13 * 9-12,1-2 *'
+on: workflow_dispatch
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
