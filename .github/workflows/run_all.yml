@@ -2,7 +2,7 @@ name: run all
 
 on:
   schedule:
-    - cron: 16 8 * SEP-DEC,JAN *
+    - cron: 35 8 * SEP-DEC,JAN *
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
