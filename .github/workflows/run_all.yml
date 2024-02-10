@@ -2,7 +2,7 @@ name: run all
 
 on:
   schedule:
-    - cron: '52 8 * 9-12,1-2 *'
+    - cron: '55 8 * 9-12,1-2 *'
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -19,7 +19,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.10
       
       - name: install packages
         run: |
