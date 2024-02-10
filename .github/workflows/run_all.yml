@@ -2,7 +2,7 @@ name: run all
 
 on:
   schedule:
-    - cron: '45 8 * 9-12,1-2 *'
+    - cron: '52 8 * 9-12,1-2 *'
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -14,10 +14,10 @@ jobs:
     steps:
 
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.9
       
