@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: 16 8 * SEP-DEC,JAN *
 
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,7 +27,7 @@ jobs:
           pip install -r requirements.txt
       
       - name: execute
-        run: python workflow.py all ${{ secrets.SUPABASE_URL }} ${{ secrets.SUPABASE_KEY }}
+        run: python workflow.py all
 
       - name: Verify changes
         id: verify_diff

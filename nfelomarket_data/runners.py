@@ -20,24 +20,25 @@ try:
     )
     load_dotenv(env_path)
 except Exception as e:
-    print('Env variables could not be loaded. This only matters if running locally: /n    {0}'.format(e))
+    ## if running as action, these will already be in env ##
+    pass
+
+## init client ##
+supabase = create_client(
+    os.environ.get("SUPABASE_URL"),
+    os.environ.get("SUPABASE_KEY")
+)
 
 ## load games ##
 db = dcm.load(['games'])
 
 ## wrappers ##
-def run_line_update(client=None):
+def run_line_update():
     '''
     runs the update lines function
     '''
-    if client is None:
-        ## if client was not passed, init ##
-        client = create_client(
-            os.environ.get("SUPABASE_URL"),
-            os.environ.get("SUPABASE_KEY")
-        )
     ## run update ##
     update_lines(
         games=db['games'],
-        supabase=client
+        supabase=supabase
     )
