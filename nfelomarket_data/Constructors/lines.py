@@ -115,13 +115,17 @@ def get_game_ids(games):
         by=['gameday'],
         ascending=[True]
     ).reset_index(drop=True).head(1)
-    current_week = next_game.iloc[0]['week']
-    current_season = next_game.iloc[0]['season']
-    ## get the first gameday of the current week ##
-    current_week_first_gameday = games[
-        (games['week'] == current_week) &
-        (games['season'] == current_season)
-    ]['gameday'].min()
+    ## if the season is over, then no current week ##
+    ## if there is a next game, update current first gameday ##
+    current_week_first_gameday = '3000-01-01'
+    if len(next_game) > 0:
+        current_week = next_game.iloc[0]['week']
+        current_season = next_game.iloc[0]['season']
+        ## get the first gameday of the current week ##
+        current_week_first_gameday = games[
+            (games['week'] == current_week) &
+            (games['season'] == current_season)
+        ]['gameday'].min()
     ## get previous week ##
     prev_game = games[games['gameday'] < current_week_first_gameday].copy().sort_values(
         by=['gameday'],
@@ -130,10 +134,13 @@ def get_game_ids(games):
     prev_week = prev_game.iloc[0]['week']
     prev_season = prev_game.iloc[0]['season']
     ## get ids ##
-    current_ids = games[
-        (games['week'] == current_week) &
-        (games['season'] == current_season)
-    ]['game_id'].unique().tolist()
+    ## if no current games, return empty ##
+    current_ids = []
+    if len(next_game) > 0:
+        current_ids = games[
+            (games['week'] == current_week) &
+            (games['season'] == current_season)
+        ]['game_id'].unique().tolist()
     prev_ids = games[
         (games['week'] == prev_week) &
         (games['season'] == prev_season)
