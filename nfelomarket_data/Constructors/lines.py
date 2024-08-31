@@ -273,6 +273,11 @@ def update_lines(games, supabase):
     updates = get_structured_lines(games, supabase)
     ## merge ##
     if existing is None:
+        ## sort ##
+        updates = updates.sort_values(
+            by=['season', 'week'],
+            ascending=[True, True]
+        ).reset_index(drop=True)
         save_line_file(updates)
     else:
         existing = existing[
@@ -282,11 +287,18 @@ def update_lines(games, supabase):
             )
         ].copy()
         if len(existing) == 0:
+            updates = updates.sort_values(
+                by=['season', 'week'],
+                ascending=[True, True]
+            ).reset_index(drop=True)
             save_line_file(updates)
         else:
             new = pd.concat([
                 existing,
                 updates
             ])
-            new = new.reset_index(drop=True)
+            new = new.sort_values(
+                by=['season', 'week'],
+                ascending=[True, True]
+            ).reset_index(drop=True)
             save_line_file(new)
