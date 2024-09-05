@@ -59,10 +59,10 @@ def define_open_set(df):
     df_open['created_at'] = pd.to_datetime(df_open['created_at'])
     df_open['created_at'] = df_open['created_at'].dt.tz_convert('US/Pacific')
     df_open['last_obs_ts'] = df_open.groupby(['game_id'])['created_at'].transform(lambda x: x.max())
-    ## get all lines within 15 minutes of the tuesday before the game ##
+    ## get all lines within 1 horu of the tuesday before the game ##
     df_open = df_open[
         (df_open['created_at'].dt.dayofweek == 1) & 
-        (df_open['created_at'].dt.time < pd.to_datetime('00:15:00').time()) &
+        (df_open['created_at'].dt.time < pd.to_datetime('01:00:00').time()) &
         (df_open['created_at'] >= df_open['last_obs_ts'] - pd.Timedelta(days=7))
     ].copy()
     ## return ##
