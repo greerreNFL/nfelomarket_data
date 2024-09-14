@@ -2,6 +2,8 @@ import pandas as pd
 import numpy
 import pathlib
 
+from ..Utilities import df_fill, tz_convert
+
 def load_existing():
     '''
     loads the existing lines file
@@ -30,24 +32,58 @@ def save_line_file(line_df):
     except Exception as e:
         raise Exception('IO ERROR: Could not save lines file. \n     {0}'.format(e))
 
-def get_line_stream(supabase):
+def fetch_supabase(supabase, start, end):
     '''
-    gets the line stream data from supabase
+    Fetches linestream data from supabase with
+    a predefined start and end
     '''
-    ## request ##
-    resp = supabase.table(
+    return supabase.table(
         'line-stream'
     ).select(
         'game_id', 'created_at', 'bookmaker', 'priority',
         'home_spread', 'home_spread_price', 'away_spread_price',
         'home_ml', 'away_ml',
         'total_line', 'over_price', 'under_price',
-        'home_spread_tickets_pct', 'home_spread_money_pct'
+        'home_spread_tickets_pct', 'home_spread_money_pct',
+        count="exact"  # Request the exact count of rows
     ).order(
         'created_at', desc=True
-    ).execute()
+    ).range(start, end).execute()
+
+def get_line_stream(supabase, limit=2000):
+    '''
+    gets the line stream data from supabase using pagination
+    to handle larger data pulls
+    '''
+    ## state vars ##
+    range_start = 0
+    range_end = 1000 if limit > 1000 else limit
+    total_records = None
+    stop_index = limit ## where to stop pagination
+    data = []
+    ## pagination loop ##
+    while True:
+        ## fetch ##
+        resp = fetch_supabase(supabase, range_start, range_end)
+        ## if no data is returned, end ##
+        if len(resp.data) == 0:
+            break
+        ## if initial request, update the total records
+        if total_records is None:
+            total_records = resp.count
+            ## update stop record if necessary ##
+            if total_records < limit:
+                stop_index = total_records
+        ## add the data ##
+        data.extend(resp.data)
+        ## update states ##
+        range_start = range_end
+        range_end = stop_index if range_end + 1000 > stop_index else range_end + 1000
+        ## if range start is greater than range end, break ##
+        if range_start >= stop_index:
+            break
     ## get data ##
-    df = pd.DataFrame(resp.data)
+    df = pd.DataFrame(data)
     return df
 
 def define_open_set(df):
@@ -59,7 +95,7 @@ def define_open_set(df):
     df_open['created_at'] = pd.to_datetime(df_open['created_at'])
     df_open['created_at'] = df_open['created_at'].dt.tz_convert('US/Pacific')
     df_open['last_obs_ts'] = df_open.groupby(['game_id'])['created_at'].transform(lambda x: x.max())
-    ## get all lines within 1 horu of the tuesday before the game ##
+    ## get all lines within 1 horu  of the tuesday before the game ##
     df_open = df_open[
         (df_open['created_at'].dt.dayofweek == 1) & 
         (df_open['created_at'].dt.time < pd.to_datetime('01:00:00').time()) &
@@ -280,25 +316,17 @@ def update_lines(games, supabase):
         ).reset_index(drop=True)
         save_line_file(updates)
     else:
-        existing = existing[
-            ~numpy.isin(
-                existing['game_id'],
-                updates['game_id'].unique().tolist()
-            )
-        ].copy()
-        if len(existing) == 0:
-            updates = updates.sort_values(
-                by=['season', 'week'],
-                ascending=[True, True]
-            ).reset_index(drop=True)
-            save_line_file(updates)
-        else:
-            new = pd.concat([
-                existing,
-                updates
-            ])
-            new = new.sort_values(
-                by=['season', 'week'],
-                ascending=[True, True]
-            ).reset_index(drop=True)
-            save_line_file(new)
+        ## ensure timezones are consistent
+        updates = tz_convert(updates)
+        existing = tz_convert(existing)
+        ## fill the existing with new values
+        updated = df_fill(
+            new=updates,
+            target=existing,
+            join_cols=['game_id', 'season', 'week', 'home_team', 'away_team']
+        )
+        updated = updated.sort_values(
+            by=['season', 'week'],
+            ascending=[True, True]
+        ).reset_index(drop=True)
+        save_line_file(updated)
