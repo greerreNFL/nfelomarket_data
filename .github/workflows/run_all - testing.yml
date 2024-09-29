@@ -1,6 +1,8 @@
-name: run all testing
+name: run all dispatch
 
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+  repository_dispatch:
 
 permissions:
   contents: write
