@@ -95,12 +95,23 @@ def define_open_set(df):
     df_open['created_at'] = pd.to_datetime(df_open['created_at'])
     df_open['created_at'] = df_open['created_at'].dt.tz_convert('US/Pacific')
     df_open['last_obs_ts'] = df_open.groupby(['game_id'])['created_at'].transform(lambda x: x.max())
-    ## get all lines within 1 horu  of the tuesday before the game ##
+    ## get all lines the tuesday morning before the game ##
+    ## two pulls happen this day, one at 12:00am and one at 4:00am ##
     df_open = df_open[
         (df_open['created_at'].dt.dayofweek == 1) & 
-        (df_open['created_at'].dt.time < pd.to_datetime('01:00:00').time()) &
+        (df_open['created_at'].dt.time < pd.to_datetime('05:00:00').time()) &
         (df_open['created_at'] >= df_open['last_obs_ts'] - pd.Timedelta(days=7))
     ].copy()
+    ## The preferences is first by time window, then by source priority ##
+    ## To create a priority that also factors in time, add hours past midnight to
+    ## priotity
+    df_open['priority'] = (
+        df_open['priority'] +
+        (
+            df_open['created_at'] -
+            df_open['created_at'].dt.normalize()
+        ).dt.total_seconds() / 3600.0
+    )
     ## return ##
     return df_open
 
