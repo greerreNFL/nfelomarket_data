@@ -177,7 +177,7 @@ def return_sourced_set(game_id, df, line_set):
     ## return ##
     return output
 
-def get_game_ids(games):
+def get_game_ids(games, rebuild):
     '''
     returns the game id's for the current week, and the previous week
     '''
@@ -212,21 +212,28 @@ def get_game_ids(games):
             (games['week'] == current_week) &
             (games['season'] == current_season)
         ]['game_id'].unique().tolist()
-    prev_ids = games[
-        (games['week'] == prev_week) &
-        (games['season'] == prev_season)
-    ]['game_id'].unique().tolist()
-    ## return ids ##
-    return current_ids + prev_ids
+    ## if rebuild, then get all ids from previous season, not just ##
+    ## previous week ##
+    if rebuild:
+        prev_ids = games[   
+            (games['season'] == prev_season)
+        ]['game_id'].unique().tolist()
+    else:
+        prev_ids = games[
+            (games['week'] == prev_week) &
+            (games['season'] == prev_season)
+        ]['game_id'].unique().tolist()
+    ## return ids and ensure no duplicates ##
+    return list(set(current_ids + prev_ids))
 
-def get_structured_lines(games, supabase):
+def get_structured_lines(games, supabase, rebuild):
     '''
     returns structured line records for the current week, and the last completed week (if in the same season)
     '''
     ## get game ids to structure data for ##
-    ids = get_game_ids(games)
+    ids = get_game_ids(games, rebuild)
     ## get lines ##
-    line_stream = get_line_stream(supabase, games)
+    line_stream = get_line_stream(supabase, games, 35000 if rebuild else 2000)
     ## get open and close ##
     open_stream = define_open_set(line_stream)
     last_stream = define_last_set(line_stream)
@@ -334,14 +341,14 @@ def get_structured_lines(games, supabase):
     ## return ##
     return pd.DataFrame(output)
 
-def update_lines(games, supabase):
+def update_lines(games, supabase, rebuild=False):
     '''
     updates the lines file
     '''
     ## get the existing ##
     existing = load_existing()
     ## get the new structured data
-    updates = get_structured_lines(games, supabase)
+    updates = get_structured_lines(games, supabase, rebuild)
     ## merge ##
     if existing is None:
         ## sort ##

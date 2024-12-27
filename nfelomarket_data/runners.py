@@ -33,12 +33,13 @@ supabase = create_client(
 db = dcm.load(['games'])
 
 ## wrappers ##
-def run_line_update():
+def run_line_update(rebuild=False):
     '''
     runs the update lines function
     '''
     ## run update ##
     update_lines(
         games=db['games'],
-        supabase=supabase
+        supabase=supabase,
+        rebuild=rebuild
     )

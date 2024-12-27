@@ -6,3 +6,6 @@ if sys.argv[1] == 'all':
 
 if sys.argv[1] == 'lines':
     nfelomarket_data.run_line_update()
+
+if sys.argv[1] == 'lines_rebuild':
+    nfelomarket_data.run_line_update(rebuild=True)
