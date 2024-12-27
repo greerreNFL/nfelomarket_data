@@ -50,7 +50,7 @@ def fetch_supabase(supabase, start, end):
         'created_at', desc=True
     ).range(start, end).execute()
 
-def get_line_stream(supabase, limit=2000):
+def get_line_stream(supabase, games, limit=2000):
     '''
     gets the line stream data from supabase using pagination
     to handle larger data pulls
@@ -84,6 +84,30 @@ def get_line_stream(supabase, limit=2000):
             break
     ## get data ##
     df = pd.DataFrame(data)
+    ## add kickoff times to create a check for lines that are post-kickoff
+    kicks = games[['game_id', 'gameday', 'gametime']].copy()
+    ## game day is YYYY-MM-DD, gametime is a string (HH:MM) that references an EST 24-hour clock ##
+    ## create a datetime column with the kickoff time in UTC
+    kicks['kickoff_time'] = (
+        pd.to_datetime(kicks['gameday'] + ' ' + kicks['gametime'])    # parse date & time
+        .dt.tz_localize('America/New_York')                           # localize to Eastern Time
+        .dt.tz_convert('UTC')                                         # convert to UTC
+    )
+    ## ensure no duplicates ##
+    kicks = kicks.groupby(['game_id']).head(1).copy()
+    ## add to df ##
+    df = pd.merge(
+        df,
+        kicks,
+        on=['game_id'],
+        how=['left']
+    )
+    ## filter the linestream to only include lines before kickoff ##
+    df = df[
+        (df['created_at'] < df['kickoff_time']) |
+        (pd.isnull(df['kickoff_time']))
+    ].copy()
+    ## return ##
     return df
 
 def define_open_set(df):
@@ -202,7 +226,7 @@ def get_structured_lines(games, supabase):
     ## get game ids to structure data for ##
     ids = get_game_ids(games)
     ## get lines ##
-    line_stream = get_line_stream(supabase)
+    line_stream = get_line_stream(supabase, games)
     ## get open and close ##
     open_stream = define_open_set(line_stream)
     last_stream = define_last_set(line_stream)
