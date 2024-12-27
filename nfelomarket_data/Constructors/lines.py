@@ -100,7 +100,7 @@ def get_line_stream(supabase, games, limit=2000):
         df,
         kicks,
         on=['game_id'],
-        how=['left']
+        how='left'
     )
     ## filter the linestream to only include lines before kickoff ##
     df = df[
