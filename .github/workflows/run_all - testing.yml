@@ -4,7 +4,6 @@ on:
   repository_dispatch:
     types: [stream_update]
   workflow_dispatch:
-  repository_dispatch:
 
 permissions:
   contents: write
