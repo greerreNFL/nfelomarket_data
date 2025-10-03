@@ -1,6 +1,8 @@
 name: run all dispatch
 
-on: 
+on:
+  repository_dispatch:
+    types: [stream_update]
   workflow_dispatch:
   repository_dispatch:
 
